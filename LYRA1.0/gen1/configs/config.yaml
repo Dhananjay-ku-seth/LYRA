@@ -1,0 +1,8 @@
+# Path to Dataset
+train: ../dataset/train
+val: ../dataset/val
+nc: 80  # Number of classes (Default: COCO Dataset)
+names: ["person", "car", "truck", "bike", "dog", "cat"]  # Class labels
+imgsz: 640  # Image size for training
+epochs: 50  # Number of training epochs
+batch_size: 16  # Adjust based on your GPU memory
