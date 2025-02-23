@@ -2,38 +2,60 @@ import cv2
 import time
 import numpy as np
 from ultralytics import YOLO
+import os
 
-# Load YOLO model with TensorRT
-MODEL_PATH = "models/yolov8s.engine"  # Ensure correct path
-COCO_LABELS_PATH = "models/coco.names"  # Ensure coco.names exists
+# ✅ Set Absolute Paths
+MODEL_PATH = "D:/Lyra/lyra1.0/gen1/models/yolov8s.engine"  # Ensure correct model path
+COCO_LABELS_PATH = "D:/Lyra/lyra1.0/gen1/models/coco.names"  # Ensure correct labels path
 
-# Load class names from COCO dataset
+# ✅ Manually Set Camera Index (Change this if needed)
+MANUAL_CAMERA_INDEX = 1  # Set to 0 for the default camera, 1 for external, etc.
+
+# ✅ Load Class Names from COCO Dataset
 def load_class_names(path):
-    try:
-        with open(path, "r") as f:
-            return [line.strip() for line in f.readlines()]
-    except FileNotFoundError:
-        print(f"❌ Error: {path} not found!")
+    if not os.path.exists(path):
+        print(f"❌ Error: {path} not found! Object names won't be displayed.")
         return []
+    
+    with open(path, "r") as f:
+        return [line.strip() for line in f.readlines()]
 
-# Set fixed camera index to 1 (External Camera)
-camera_index = 1
-cap = cv2.VideoCapture(camera_index)
+# ✅ Try Manual Camera Index First, Then Auto-Detect
+def find_working_camera():
+    cap = cv2.VideoCapture(MANUAL_CAMERA_INDEX)  # Try manual selection first
+    if cap.isOpened():
+        print(f"✅ Using Manually Set Camera Index: {MANUAL_CAMERA_INDEX}")
+        return cap
+    
+    print(f"❌ Camera Index {MANUAL_CAMERA_INDEX} not found! Trying auto-detect...")
 
-if not cap.isOpened():
-    print("❌ External camera not detected! Trying default camera...")
-    cap = cv2.VideoCapture(0)
+    # ✅ Auto-detect available camera
+    for index in range(5):  # Try up to 5 camera indexes
+        cap = cv2.VideoCapture(index)
+        if cap.isOpened():
+            print(f"✅ Using Auto-Detected Camera Index: {index}")
+            return cap
 
-# Load model and labels
+    print("❌ No working camera found! Exiting...")
+    exit()
+
+cap = find_working_camera()
+
+# ✅ Load YOLO Model & Labels
 print(f"🚀 Loading TensorRT Model from: {MODEL_PATH}")
 model = YOLO(MODEL_PATH)
 class_names = load_class_names(COCO_LABELS_PATH)
 
 if not class_names:
-    print("❌ No class names found! Object names won't be displayed.")
+    print("⚠️ No class names found! Object names won't be displayed.")
 
-# Start video capture
-prev_time = 0
+# ✅ Initialize FPS Calculation
+prev_time = time.time()
+fps_values = []
+
+# ✅ Create Window Before Resizing (Fix OpenCV Error)
+cv2.namedWindow("LYRA 1.0 Object Detection", cv2.WINDOW_NORMAL)
+cv2.setWindowProperty("LYRA 1.0 Object Detection", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 while True:
     ret, frame = cap.read()
@@ -41,41 +63,48 @@ while True:
         print("❌ Camera Not Detected!")
         break
 
-    # Run YOLO inference
+    # ✅ Apply Night Vision Enhancement
+    frame = cv2.convertScaleAbs(frame, alpha=1.5, beta=20)  # Adjust brightness & contrast
+
+    # ✅ Run YOLO Inference
     results = model(frame)
 
-    # Get FPS
+    # ✅ Calculate FPS (Smoothed)
     curr_time = time.time()
     fps = 1 / (curr_time - prev_time)
     prev_time = curr_time
 
-    # Draw detections on frame
+    fps_values.append(fps)
+    if len(fps_values) > 10:  # Keep last 10 values for smoothing
+        fps_values.pop(0)
+    
+    avg_fps = sum(fps_values) / len(fps_values)
+
+    # ✅ Draw Detections
     for result in results:
         for box in result.boxes:
             x1, y1, x2, y2 = map(int, box.xyxy[0])  # Bounding box
             conf = float(box.conf[0])  # Confidence score
             cls = int(box.cls[0])  # Class ID
 
-            # Get class name from COCO dataset
+            # ✅ Get Class Name from COCO Dataset
             class_name = class_names[cls] if cls < len(class_names) else f"Class {cls}"
 
-            # Draw bounding box
+            # ✅ Draw Bounding Box & Label
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-            # Display class name & confidence score
             label = f"{class_name} {conf:.2f}"
-            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
-    # Display FPS
-    cv2.putText(frame, f"FPS: {fps:.2f}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2)
+    # ✅ Display FPS (Smoothed)
+    cv2.putText(frame, f"FPS: {avg_fps:.2f}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2)
 
-    # Show frame
+    # ✅ Show Output Frame in Full Screen
     cv2.imshow("LYRA 1.0 Object Detection", frame)
 
-    # Exit on 'q' key
+    # ✅ Exit on 'Q' Key
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release resources
+# ✅ Release Resources
 cap.release()
 cv2.destroyAllWindows()
