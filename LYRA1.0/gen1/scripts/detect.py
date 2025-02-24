@@ -39,7 +39,7 @@ def find_working_camera():
     # ✅ Set Camera Resolution
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)  # Set Width to Full HD
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)  # Set Height to Full HD
-    cap.set(cv2.CAP_PROP_FPS, 30)  # Set FPS (if supported)
+    cap.set(cv2.CAP_PROP_FPS, 60)  # Set FPS (if supported)
 
     # ✅ Confirm Resolution
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
