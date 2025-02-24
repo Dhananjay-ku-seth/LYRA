@@ -25,19 +25,28 @@ def find_working_camera():
     cap = cv2.VideoCapture(MANUAL_CAMERA_INDEX)  # Try manual selection first
     if cap.isOpened():
         print(f"✅ Using Manually Set Camera Index: {MANUAL_CAMERA_INDEX}")
-        return cap
-    
-    print(f"❌ Camera Index {MANUAL_CAMERA_INDEX} not found! Trying auto-detect...")
+    else:
+        print(f"❌ Camera Index {MANUAL_CAMERA_INDEX} not found! Trying auto-detect...")
+        for index in range(5):
+            cap = cv2.VideoCapture(index)
+            if cap.isOpened():
+                print(f"✅ Using Auto-Detected Camera Index: {index}")
+                break
+        else:
+            print("❌ No working camera found! Exiting...")
+            exit()
 
-    # ✅ Auto-detect available camera
-    for index in range(5):  # Try up to 5 camera indexes
-        cap = cv2.VideoCapture(index)
-        if cap.isOpened():
-            print(f"✅ Using Auto-Detected Camera Index: {index}")
-            return cap
+    # ✅ Set Camera Resolution
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)  # Set Width to Full HD
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)  # Set Height to Full HD
+    cap.set(cv2.CAP_PROP_FPS, 30)  # Set FPS (if supported)
 
-    print("❌ No working camera found! Exiting...")
-    exit()
+    # ✅ Confirm Resolution
+    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    print(f"📷 Camera Resolution Set To: {int(width)}x{int(height)}")
+
+    return cap
 
 cap = find_working_camera()
 
@@ -62,6 +71,9 @@ while True:
     if not ret:
         print("❌ Camera Not Detected!")
         break
+
+    # ✅ Verify Frame Resolution
+    print(f"📏 Frame Size: {frame.shape}")  # Debugging: Check actual resolution
 
     # ✅ Apply Night Vision Enhancement
     frame = cv2.convertScaleAbs(frame, alpha=1.5, beta=20)  # Adjust brightness & contrast
