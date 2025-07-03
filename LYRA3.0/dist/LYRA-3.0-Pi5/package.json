@@ -1,0 +1,66 @@
+{
+  "name": "lyra-3.0-electron",
+  "version": "3.0.0",
+  "description": "LYRA 3.0 - AI Assistant Dashboard with Electron Frontend",
+  "main": "electron-main.js",
+  "homepage": ".",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --debug",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-portable": "electron-builder --win --config.win.target=portable",
+    "dist": "npm run build",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "AI",
+    "Assistant",
+    "JARVIS",
+    "Robotics",
+    "UAV",
+    "UGV",
+    "Automation",
+    "Control-System"
+  ],
+  "author": {
+    "name": "LYRA Development Team",
+    "email": "dev@lyra-ai.com"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.0"
+  },
+  "build": {
+    "appId": "com.lyra.ai-assistant",
+    "productName": "LYRA 3.0 AI Assistant",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "gui/**/*",
+      "core/**/*",
+      "electron-main.js",
+      "main.py",
+      "launcher.py",
+      "requirements.txt",
+      "README.md",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "artifactName": "LYRA-3.0-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "LYRA 3.0"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+# LYRA 3.0 - Raspberry Pi 5 Requirements (ARM64)
+
+# Core Framework
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+python-socketio==5.8.0
+
+# System Monitoring & Hardware
+psutil==5.9.5
+gpiozero>=1.6.2          # GPIO control
+RPi.GPIO>=0.7.1          # Low-level GPIO
+picamera2>=0.3.12        # Camera module support
+
+# Native GUI Framework (Primary)
+# PyQt5>=5.15.0            # Will be installed via apt
+
+# Performance & Data Processing  
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Configuration & Security
+pyyaml>=6.0
+cryptography>=41.0.0
+
+# Audio/Video Processing (Pi optimized)
+opencv-python-headless>=4.8.0  # Headless for better performance
+pygame>=2.5.0                   # Audio/input handling
+
+# Communication Protocols
+pyserial>=3.5                   # UART for devices
+paho-mqtt>=1.6.1               # MQTT communication
+pymavlink>=2.4.37              # UAV communication
+
+# Web Interface (for hybrid mode)
+Jinja2>=3.1.0
+Werkzeug>=2.3.0
+
+# Optional Voice Processing (lightweight alternatives)
+# espeak-ng (system package)
+# speech_recognition>=3.10.0
+
+# Hardware Monitoring
+smbus2>=0.4.2           # I2C communication
+spidev>=3.6             # SPI communication
+w1thermsensor>=2.0.0    # Temperature sensors
+
+# Development Tools
+pytest>=7.4.0

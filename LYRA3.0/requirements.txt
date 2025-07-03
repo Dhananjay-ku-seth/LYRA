@@ -1,0 +1,31 @@
+# LYRA 3.0 - Production Dependencies
+
+# Core Framework
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+python-socketio==5.8.0
+
+# System Monitoring
+psutil==5.9.5
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Configuration & Logging
+pyyaml>=6.0
+cryptography>=41.0.0
+
+# Voice Processing (Required for LYRA)
+pyttsx3>=2.90
+SpeechRecognition>=3.10.0
+pyaudio>=0.2.11
+comtypes>=1.2.0
+
+# Optional Computer Vision (uncomment if needed)
+# opencv-python>=4.8.0
+
+# Optional Communication Protocols (uncomment if needed)
+# pymavlink>=2.4.37  # For UAV communication
+# paho-mqtt>=1.6.1   # For MQTT communication
+# pyserial>=3.5      # For UART communication

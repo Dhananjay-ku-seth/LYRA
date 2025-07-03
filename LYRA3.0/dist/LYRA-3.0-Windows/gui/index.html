@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LYRA 3.0 - AI Assistant Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.0/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="title">🤖 LYRA 3.0</h1>
+                <span class="subtitle">Logical Yielding Response Algorithm</span>
+            </div>
+            <div class="header-right">
+                <div class="status-indicators">
+                    <div class="status-item" id="cpu-status">
+                        <i class="fas fa-microchip"></i>
+                        <span>CPU: --</span>
+                    </div>
+                    <div class="status-item" id="memory-status">
+                        <i class="fas fa-memory"></i>
+                        <span>RAM: --</span>
+                    </div>
+                    <div class="status-item" id="temp-status">
+                        <i class="fas fa-thermometer-half"></i>
+                        <span>TEMP: --</span>
+                    </div>
+                </div>
+                <div class="connection-status" id="connection-status">
+                    <i class="fas fa-wifi"></i>
+                    <span>Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-button active" data-tab="home">
+                <i class="fas fa-home"></i>
+                Home
+            </button>
+            <button class="tab-button" data-tab="system">
+                <i class="fas fa-robot"></i>
+                System
+            </button>
+            <button class="tab-button" data-tab="upload">
+                <i class="fas fa-upload"></i>
+                Data & Config
+            </button>
+            <button class="tab-button" data-tab="logs">
+                <i class="fas fa-clipboard-list"></i>
+                Logs & Diagnostics
+            </button>
+            <button class="tab-button" data-tab="settings">
+                <i class="fas fa-cog"></i>
+                Settings
+            </button>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="main-content">
+            <!-- Home Tab -->
+            <div class="tab-content active" id="home-tab">
+                <div class="home-grid">
+                    <!-- LYRA Core Animation -->
+                    <div class="lyra-core">
+                        <div class="core-container">
+                            <div class="core-circle">
+                                <div class="core-pulse"></div>
+                                <div class="core-face">
+                                    <i class="fas fa-eye" id="lyra-eye"></i>
+                                </div>
+                            </div>
+                            <div class="core-rings">
+                                <div class="ring ring-1"></div>
+                                <div class="ring ring-2"></div>
+                                <div class="ring ring-3"></div>
+                            </div>
+                        </div>
+                        <div class="core-status">
+                            <h3>LYRA 3.0 Core</h3>
+                            <p id="core-status-text">System Online</p>
+                        </div>
+                    </div>
+
+                    <!-- Current Mode -->
+                    <div class="mode-panel">
+                        <h3>Current Mode</h3>
+                        <div class="mode-display" id="current-mode">
+                            <i class="fas fa-home"></i>
+                            <span>Home Mode</span>
+                        </div>
+                        <div class="mode-buttons">
+                            <button class="mode-btn" data-mode="home">
+                                <i class="fas fa-home"></i>
+                                Home
+                            </button>
+                            <button class="mode-btn" data-mode="defense">
+                                <i class="fas fa-shield-alt"></i>
+                                Defense
+                            </button>
+                            <button class="mode-btn" data-mode="night">
+                                <i class="fas fa-moon"></i>
+                                Night
+                            </button>
+                            <button class="mode-btn" data-mode="manual">
+                                <i class="fas fa-hand-paper"></i>
+                                Manual
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Voice Interface -->
+                    <div class="voice-panel">
+                        <h3>Voice Interface</h3>
+                        <div class="voice-controls">
+                            <div class="voice-indicator">
+                                <i class="fas fa-microphone"></i>
+                                <span>Always Listening</span>
+                            </div>
+                            <div class="wake-words">
+                                <strong>Wake Words:</strong> "Hi LYRA", "Hey LYRA", "LYRA"
+                            </div>
+                        </div>
+                        <div class="voice-status" id="voice-status">
+                            Say "Hi LYRA" followed by your command
+                        </div>
+                    </div>
+
+                    <!-- Text Command Interface -->
+                    <div class="command-panel">
+                        <h3>Text Commands</h3>
+                        <div class="command-input">
+                            <input type="text" id="command-text" placeholder="Enter command...">
+                            <button id="send-command">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <div class="command-response" id="command-response">
+                            Welcome Commander. LYRA 3.0 is ready for your commands.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Control Tab -->
+            <div class="tab-content" id="system-tab">
+                <div class="system-grid">
+                    <!-- TRINETRA Control -->
+                    <div class="device-panel">
+                        <h3>🚗 TRINETRA Ground Bot</h3>
+                        <div class="device-status">
+                            <span class="status-dot offline"></span>
+                            <span>Status: Offline</span>
+                        </div>
+                        
+                        <div class="control-section">
+                            <h4>Movement Controls</h4>
+                            <div class="movement-controls">
+                                <button class="move-btn" data-direction="forward">
+                                    <i class="fas fa-arrow-up"></i>
+                                </button>
+                                <div class="move-row">
+                                    <button class="move-btn" data-direction="left">
+                                        <i class="fas fa-arrow-left"></i>
+                                    </button>
+                                    <button class="move-btn stop" data-direction="stop">
+                                        <i class="fas fa-stop"></i>
+                                    </button>
+                                    <button class="move-btn" data-direction="right">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                </div>
+                                <button class="move-btn" data-direction="backward">
+                                    <i class="fas fa-arrow-down"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="control-section">
+                            <h4>Camera Controls</h4>
+                            <div class="camera-controls">
+                                <button class="control-btn">
+                                    <i class="fas fa-video"></i>
+                                    Start Stream
+                                </button>
+                                <button class="control-btn">
+                                    <i class="fas fa-camera"></i>
+                                    Snapshot
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="control-section">
+                            <h4>Sensor Data</h4>
+                            <div class="sensor-grid">
+                                <div class="sensor-item">
+                                    <i class="fas fa-fire"></i>
+                                    <span>Fire: Normal</span>
+                                </div>
+                                <div class="sensor-item">
+                                    <i class="fas fa-cloud"></i>
+                                    <span>Gas: Clear</span>
+                                </div>
+                                <div class="sensor-item">
+                                    <i class="fas fa-eye"></i>
+                                    <span>Motion: None</span>
+                                </div>
+                                <div class="sensor-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>GPS: --</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KRAIT-3 Control -->
+                    <div class="device-panel">
+                        <h3>✈️ KRAIT-3 Tiltrotor UAV</h3>
+                        <div class="device-status">
+                            <span class="status-dot offline"></span>
+                            <span>Status: Offline</span>
+                        </div>
+                        
+                        <div class="control-section">
+                            <h4>Flight Controls</h4>
+                            <div class="flight-controls">
+                                <button class="control-btn primary">
+                                    <i class="fas fa-rocket"></i>
+                                    Launch
+                                </button>
+                                <button class="control-btn">
+                                    <i class="fas fa-pause"></i>
+                                    Hover
+                                </button>
+                                <button class="control-btn">
+                                    <i class="fas fa-home"></i>
+                                    Return
+                                </button>
+                                <button class="control-btn danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Emergency Land
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="control-section">
+                            <h4>Telemetry</h4>
+                            <div class="telemetry-grid">
+                                <div class="telemetry-item">
+                                    <i class="fas fa-mountain"></i>
+                                    <span>Altitude: 0m</span>
+                                </div>
+                                <div class="telemetry-item">
+                                    <i class="fas fa-battery-full"></i>
+                                    <span>Battery: 100%</span>
+                                </div>
+                                <div class="telemetry-item">
+                                    <i class="fas fa-compass"></i>
+                                    <span>Heading: 0°</span>
+                                </div>
+                                <div class="telemetry-item">
+                                    <i class="fas fa-satellite"></i>
+                                    <span>GPS: --</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-section">
+                            <h4>Mission Control</h4>
+                            <div class="mission-controls">
+                                <select class="mission-select">
+                                    <option>Select Mission</option>
+                                    <option>Reconnaissance</option>
+                                    <option>Surveillance</option>
+                                    <option>Search & Rescue</option>
+                                </select>
+                                <button class="control-btn">
+                                    <i class="fas fa-play"></i>
+                                    Start Mission
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Tab -->
+            <div class="tab-content" id="upload-tab">
+                <div class="upload-grid">
+                    <div class="upload-panel">
+                        <h3>📁 Data Upload</h3>
+                        <div class="upload-zone" id="data-upload">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Drop files here or click to browse</p>
+                            <input type="file" id="data-files" multiple hidden>
+                        </div>
+                        <div class="upload-info">
+                            <p>Supported: .txt, .csv, .json, .wav, .mp3</p>
+                        </div>
+                    </div>
+
+                    <div class="upload-panel">
+                        <h3>⚙️ Config Upload</h3>
+                        <div class="upload-zone" id="config-upload">
+                            <i class="fas fa-cog"></i>
+                            <p>Drop .lyra-config files here</p>
+                            <input type="file" id="config-files" accept=".json,.yaml,.yml" hidden>
+                        </div>
+                        <div class="upload-info">
+                            <p>Supported: .json, .yaml, .yml</p>
+                        </div>
+                    </div>
+
+                    <div class="upload-panel full-width">
+                        <h3>📋 Upload Queue</h3>
+                        <div class="upload-queue" id="upload-queue">
+                            <p>No files queued</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs Tab -->
+            <div class="tab-content" id="logs-tab">
+                <div class="logs-grid">
+                    <div class="logs-panel">
+                        <h3>📊 System Diagnostics</h3>
+                        <div class="diagnostic-controls">
+                            <button class="control-btn primary" id="run-diagnostics">
+                                <i class="fas fa-play"></i>
+                                Run Full Diagnostics
+                            </button>
+                            <button class="control-btn" id="export-logs">
+                                <i class="fas fa-download"></i>
+                                Export Logs
+                            </button>
+                        </div>
+                        <div class="diagnostic-results" id="diagnostic-results">
+                            <p>Click "Run Full Diagnostics" to start system check</p>
+                        </div>
+                    </div>
+
+                    <div class="logs-panel full-width">
+                        <h3>📝 System Logs</h3>
+                        <div class="logs-container" id="logs-container">
+                            <div class="log-entry">
+                                <span class="timestamp">[2024-07-03 17:40:00]</span>
+                                <span class="level info">INFO</span>
+                                <span class="message">LYRA 3.0 system initialized</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settings-tab">
+                <div class="settings-grid">
+                    <div class="settings-panel">
+                        <h3>🌐 Language Settings</h3>
+                        <div class="setting-item">
+                            <label>Interface Language</label>
+                            <select id="interface-language">
+                                <option value="en">English</option>
+                                <option value="hi">Hindi</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Voice Language</label>
+                            <select id="voice-language">
+                                <option value="en">English</option>
+                                <option value="hi">Hindi</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-panel">
+                        <h3>🎙️ Voice Settings</h3>
+                        <div class="setting-item">
+                            <label>Voice Type</label>
+                            <select id="voice-type">
+                                <option value="neutral">Neutral</option>
+                                <option value="female">Female</option>
+                                <option value="male">Male</option>
+                                <option value="tactical">Tactical</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Speech Rate</label>
+                            <input type="range" id="speech-rate" min="50" max="300" value="150">
+                            <span>150 WPM</span>
+                        </div>
+                        <div class="setting-item">
+                            <label>Volume</label>
+                            <input type="range" id="volume" min="0" max="100" value="90">
+                            <span>90%</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-panel">
+                        <h3>🎨 Theme Settings</h3>
+                        <div class="setting-item">
+                            <label>GUI Theme</label>
+                            <select id="gui-theme">
+                                <option value="neon">Neon (Dark)</option>
+                                <option value="tactical">Tactical (Grey)</option>
+                                <option value="light">Light</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Animation Level</label>
+                            <select id="animation-level">
+                                <option value="full">Full Animations</option>
+                                <option value="reduced">Reduced</option>
+                                <option value="minimal">Minimal</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-panel">
+                        <h3>🔒 Security Settings</h3>
+                        <div class="setting-item">
+                            <label>Authentication</label>
+                            <button class="control-btn" id="face-auth">
+                                <i class="fas fa-user-check"></i>
+                                Configure Face Recognition
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <label>Master Passphrase</label>
+                            <button class="control-btn" id="set-passphrase">
+                                <i class="fas fa-key"></i>
+                                Set Passphrase
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- WebSocket and JavaScript -->
+    <script src="main.js"></script>
+</body>
+</html>
