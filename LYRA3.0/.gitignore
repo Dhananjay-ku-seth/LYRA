@@ -1,0 +1,35 @@
+# Build artifacts and large files
+dist/*.zip
+node_modules/
+venv/
+*.exe
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+
+# Virtual environments
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
