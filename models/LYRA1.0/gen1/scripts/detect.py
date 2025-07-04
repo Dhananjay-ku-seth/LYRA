@@ -5,11 +5,11 @@ from ultralytics import YOLO
 import os
 
 # ✅ Set Absolute Paths
-MODEL_PATH = "D:/Lyra/lyra1.0/gen1/models/yolov8s.engine"  # Ensure correct model path
-COCO_LABELS_PATH = "D:/Lyra/lyra1.0/gen1/models/coco.names"  # Ensure correct labels path
+MODEL_PATH = "D:/lyra/models/LYRA1.0/gen1/runs/detect/train7/weights/best.pt"  # Use the trained model
+COCO_LABELS_PATH = "D:/lyra/models/LYRA1.0/gen1/models/coco.names"  # Ensure correct labels path
 
 # ✅ Manually Set Camera Index (Change this if needed)
-MANUAL_CAMERA_INDEX = 1  # Set to 0 for the default camera, 1 for external, etc.
+MANUAL_CAMERA_INDEX = 0  # Set to 0 for the default camera, 1 for external, etc.
 
 # ✅ Load Class Names from COCO Dataset
 def load_class_names(path):

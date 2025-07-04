@@ -264,6 +264,26 @@ def handle_command(data):
             response = pi5_hardware.stop_camera_stream()
             emit('response', {'type': 'camera_response', 'data': response})
             
+        elif command_type == 'detection_start' and pi5_hardware:
+            response = pi5_hardware.start_continuous_detection()
+            emit('response', {'type': 'detection_response', 'data': response})
+            
+        elif command_type == 'detection_stop' and pi5_hardware:
+            response = pi5_hardware.stop_continuous_detection()
+            emit('response', {'type': 'detection_response', 'data': response})
+            
+        elif command_type == 'detection_single' and pi5_hardware:
+            response = pi5_hardware.run_object_detection()
+            emit('response', {'type': 'detection_response', 'data': response})
+            
+        elif command_type == 'detection_results' and pi5_hardware:
+            results = pi5_hardware.get_detection_results()
+            emit('response', {'type': 'detection_results', 'data': results})
+            
+        elif command_type == 'detection_stats' and pi5_hardware:
+            stats = pi5_hardware.get_detection_stats()
+            emit('response', {'type': 'detection_stats', 'data': stats})
+            
         elif command_type == 'hardware_info' and pi5_hardware:
             info = pi5_hardware.get_hardware_info()
             emit('response', {'type': 'hardware_info', 'data': info})

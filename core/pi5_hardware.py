@@ -6,8 +6,11 @@ Handles GPIO, Camera, I2C, SPI, and hardware monitoring
 import logging
 import os
 import json
+import cv2
+import numpy as np
 from typing import Dict, Any, Optional, List
 from datetime import datetime
+from threading import Thread, Lock
 
 class Pi5Hardware:
     """
@@ -21,10 +24,23 @@ class Pi5Hardware:
         self.i2c_available = False
         self.hardware_info = {}
         
+        # Object detection variables
+        self.yolo_model = None
+        self.detection_active = False
+        self.detection_thread = None
+        self.detection_lock = Lock()
+        self.latest_detections = []
+        self.detection_stats = {
+            'total_frames': 0,
+            'avg_inference_time': 0,
+            'last_detection_time': None
+        }
+        
         # Initialize hardware components
         self._init_gpio()
         self._init_camera()
         self._init_i2c()
+        self._init_yolo()
         self._detect_hardware()
         
     def _init_gpio(self):
@@ -65,12 +81,31 @@ class Pi5Hardware:
         except Exception as e:
             self.logger.error(f"I2C initialization failed: {e}")
     
+    def _init_yolo(self):
+        """Initialize YOLO object detection model"""
+        try:
+            from ultralytics import YOLO
+            model_path = "models/LYRA1.0/gen1/runs/detect/train7/weights/best.pt"
+            
+            # Check if model file exists
+            if os.path.exists(model_path):
+                self.yolo_model = YOLO(model_path)
+                self.logger.info(f"YOLO model loaded from {model_path}")
+            else:
+                self.logger.warning(f"YOLO model not found at {model_path}")
+                
+        except ImportError:
+            self.logger.warning("Ultralytics YOLO library not available")
+        except Exception as e:
+            self.logger.error(f"YOLO initialization failed: {e}")
+    
     def _detect_hardware(self):
         """Detect available hardware components"""
         self.hardware_info = {
             'gpio_available': self.gpio_available,
             'camera_available': self.camera_available,
             'i2c_available': self.i2c_available,
+            'yolo_available': self.yolo_model is not None,
             'cpu_temp_available': os.path.exists('/sys/class/thermal/thermal_zone0/temp'),
             'gpu_temp_available': os.path.exists('/opt/vc/bin/vcgencmd'),
             'model': self._get_pi_model(),
@@ -149,6 +184,12 @@ class Pi5Hardware:
             # Add camera status if available
             if self.camera_available:
                 status['camera_status'] = 'Available'
+            
+            # Add YOLO detection status
+            if self.yolo_model is not None:
+                status['yolo_status'] = 'Available'
+                status['detection_active'] = self.detection_active
+                status['detection_stats'] = self.detection_stats.copy()
                 
             return status
             
@@ -258,6 +299,185 @@ class Pi5Hardware:
         except Exception as e:
             return {'status': 'error', 'message': str(e)}
     
+    def run_object_detection(self, source=0, confidence=0.5, show_preview=False) -> Dict[str, Any]:
+        """Run object detection on camera feed or image"""
+        if self.yolo_model is None:
+            return {'status': 'error', 'message': 'YOLO model not available'}
+        
+        try:
+            # Run inference
+            results = self.yolo_model(source, conf=confidence, verbose=False)
+            
+            detections = []
+            for result in results:
+                boxes = result.boxes
+                if boxes is not None:
+                    for box in boxes:
+                        detection = {
+                            'class': result.names[int(box.cls[0])],
+                            'confidence': float(box.conf[0]),
+                            'bbox': box.xywh[0].tolist(),  # [x_center, y_center, width, height]
+                            'xyxy': box.xyxy[0].tolist()   # [x1, y1, x2, y2]
+                        }
+                        detections.append(detection)
+            
+            # Update detection stats
+            with self.detection_lock:
+                self.latest_detections = detections
+                self.detection_stats['total_frames'] += 1
+                self.detection_stats['last_detection_time'] = str(datetime.now())
+            
+            return {
+                'status': 'success',
+                'detections': detections,
+                'timestamp': str(datetime.now())
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Object detection error: {e}")
+            return {'status': 'error', 'message': str(e)}
+    
+    def start_continuous_detection(self, camera_index=0, confidence=0.5) -> Dict[str, Any]:
+        """Start continuous object detection in a separate thread"""
+        if self.yolo_model is None:
+            return {'status': 'error', 'message': 'YOLO model not available'}
+        
+        if self.detection_active:
+            return {'status': 'error', 'message': 'Detection already active'}
+        
+        try:
+            self.detection_active = True
+            self.detection_thread = Thread(
+                target=self._detection_loop,
+                args=(camera_index, confidence),
+                daemon=True
+            )
+            self.detection_thread.start()
+            
+            return {'status': 'success', 'message': 'Continuous detection started'}
+            
+        except Exception as e:
+            self.detection_active = False
+            return {'status': 'error', 'message': str(e)}
+    
+    def stop_continuous_detection(self) -> Dict[str, Any]:
+        """Stop continuous object detection"""
+        if not self.detection_active:
+            return {'status': 'error', 'message': 'Detection not active'}
+        
+        try:
+            self.detection_active = False
+            if self.detection_thread and self.detection_thread.is_alive():
+                self.detection_thread.join(timeout=5)
+            
+            return {'status': 'success', 'message': 'Continuous detection stopped'}
+            
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+    
+    def _detection_loop(self, camera_index, confidence):
+        """Main detection loop for continuous detection"""
+        cap = None
+        try:
+            cap = cv2.VideoCapture(camera_index)
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            
+            frame_count = 0
+            total_inference_time = 0
+            
+            while self.detection_active:
+                ret, frame = cap.read()
+                if not ret:
+                    continue
+                
+                start_time = cv2.getTickCount()
+                
+                # Run detection on frame
+                results = self.yolo_model(frame, conf=confidence, verbose=False)
+                
+                end_time = cv2.getTickCount()
+                inference_time = (end_time - start_time) / cv2.getTickFrequency() * 1000
+                
+                # Process results
+                detections = []
+                for result in results:
+                    boxes = result.boxes
+                    if boxes is not None:
+                        for box in boxes:
+                            detection = {
+                                'class': result.names[int(box.cls[0])],
+                                'confidence': float(box.conf[0]),
+                                'bbox': box.xywh[0].tolist(),
+                                'xyxy': box.xyxy[0].tolist()
+                            }
+                            detections.append(detection)
+                
+                # Update stats
+                frame_count += 1
+                total_inference_time += inference_time
+                
+                with self.detection_lock:
+                    self.latest_detections = detections
+                    self.detection_stats['total_frames'] = frame_count
+                    self.detection_stats['avg_inference_time'] = total_inference_time / frame_count
+                    self.detection_stats['last_detection_time'] = str(datetime.now())
+                
+                # Small delay to prevent excessive CPU usage
+                cv2.waitKey(1)
+                
+        except Exception as e:
+            self.logger.error(f"Detection loop error: {e}")
+        finally:
+            if cap:
+                cap.release()
+            self.detection_active = False
+    
+    def get_latest_detections(self) -> Dict[str, Any]:
+        """Get the latest detection results"""
+        with self.detection_lock:
+            return {
+                'status': 'success',
+                'detections': self.latest_detections.copy(),
+                'stats': self.detection_stats.copy(),
+                'timestamp': str(datetime.now())
+            }
+    
+    def detect_objects_in_image(self, image_path: str, confidence=0.5) -> Dict[str, Any]:
+        """Detect objects in a specific image file"""
+        if self.yolo_model is None:
+            return {'status': 'error', 'message': 'YOLO model not available'}
+        
+        if not os.path.exists(image_path):
+            return {'status': 'error', 'message': f'Image file not found: {image_path}'}
+        
+        try:
+            results = self.yolo_model(image_path, conf=confidence, verbose=False)
+            
+            detections = []
+            for result in results:
+                boxes = result.boxes
+                if boxes is not None:
+                    for box in boxes:
+                        detection = {
+                            'class': result.names[int(box.cls[0])],
+                            'confidence': float(box.conf[0]),
+                            'bbox': box.xywh[0].tolist(),
+                            'xyxy': box.xyxy[0].tolist()
+                        }
+                        detections.append(detection)
+            
+            return {
+                'status': 'success',
+                'image_path': image_path,
+                'detections': detections,
+                'timestamp': str(datetime.now())
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Image detection error: {e}")
+            return {'status': 'error', 'message': str(e)}
+    
     def optimize_performance(self) -> Dict[str, Any]:
         """Optimize system performance for LYRA"""
         optimizations = []
@@ -292,6 +512,10 @@ class Pi5Hardware:
     def cleanup(self):
         """Clean up hardware resources"""
         try:
+            # Stop object detection if active
+            if self.detection_active:
+                self.stop_continuous_detection()
+            
             if self.camera_available and hasattr(self, 'camera'):
                 self.camera.stop()
                 self.camera.close()
